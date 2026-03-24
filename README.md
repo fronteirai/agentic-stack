@@ -61,7 +61,13 @@ Optional: `VITE_LANGGRAPH_GRAPH_ID` in the frontend must match `LANGGRAPH_GRAPH_
 
 Setup <a href=".env.example">.env</a> and <a href="agents/copilotkit/agent/.env.example">agents/copilotkit/agent/.env</a> files based on their corresponding example files.
 
-### Running JavaScript Frontend & Backend & Langgraph AI Agent
+### Step 2: Load Sample data into Supabase via script
+
+```bash
+scripts/syncNvdToSupabase.ts
+```
+
+### Step 3: Running JavaScript Frontend & Backend & Langgraph AI Agent
 
 Install dependencies:
 
