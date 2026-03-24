@@ -22,7 +22,9 @@ app.get("/api/health", async (_req, res) => {
 app.get("/api/vulnerabilities", async (req, res) => {
   try {
     const severity = (req.query.severity as string | undefined)?.toUpperCase() as Severity | undefined;
-    const rows = await getVulnerabilitiesFromSupabase(severity);
+    const vendorRaw = req.query.vendor as string | undefined;
+    const vendor = typeof vendorRaw === "string" && vendorRaw.trim() !== "" ? vendorRaw.trim() : undefined;
+    const rows = await getVulnerabilitiesFromSupabase(severity, vendor);
     res.json(rows);
   } catch (error) {
     res.status(502).json({

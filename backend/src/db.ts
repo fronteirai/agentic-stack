@@ -45,25 +45,34 @@ function mapRowToVulnerability(row: any): VulnerabilityItem {
   };
 }
 
-export async function getVulnerabilitiesFromSupabase(severity?: Severity): Promise<VulnerabilityItem[]> {
+export async function getVulnerabilitiesFromSupabase(
+  severity?: Severity,
+  vendor?: string
+): Promise<VulnerabilityItem[]> {
   const client = createClient();
   try {
     await client.connect();
-    const result = severity
-      ? await client.query(
-          `
-          SELECT id, description, severity, cvss_score, exploitability_score, published_date, vendor, risk_score
-          FROM vulnerabilities
-          WHERE severity = $1
-          ORDER BY risk_score DESC, published_date DESC
-        `,
-          [severity]
-        )
-      : await client.query(`
-          SELECT id, description, severity, cvss_score, exploitability_score, published_date, vendor, risk_score
-          FROM vulnerabilities
-          ORDER BY risk_score DESC, published_date DESC
-        `);
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    let i = 1;
+    if (severity) {
+      conditions.push(`severity = $${i++}`);
+      params.push(severity);
+    }
+    if (vendor) {
+      conditions.push(`vendor = $${i++}`);
+      params.push(vendor);
+    }
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const result = await client.query(
+      `
+      SELECT id, description, severity, cvss_score, exploitability_score, published_date, vendor, risk_score
+      FROM vulnerabilities
+      ${where}
+      ORDER BY risk_score DESC, published_date DESC
+    `,
+      params
+    );
     return result.rows.map(mapRowToVulnerability);
   } finally {
     await client.end().catch(() => undefined);
@@ -91,7 +100,8 @@ export async function getVulnerabilityByIdFromSupabase(id: string): Promise<Vuln
 
 export interface VulnerabilityStats {
   severityBreakdown: Record<string, number>;
-  topVendors: Array<{ vendor: string; count: number }>;
+  /** All vendors with CVE counts, highest count first */
+  vendors: Array<{ vendor: string; count: number }>;
   total: number;
 }
 
@@ -102,7 +112,7 @@ export async function getVulnerabilityStatsFromSupabase(): Promise<Vulnerability
     const [severityResult, vendorsResult, totalResult] = await Promise.all([
       client.query("SELECT severity, COUNT(*)::int AS count FROM vulnerabilities GROUP BY severity"),
       client.query(
-        "SELECT vendor, COUNT(*)::int AS count FROM vulnerabilities GROUP BY vendor ORDER BY COUNT(*) DESC LIMIT 5"
+        "SELECT vendor, COUNT(*)::int AS count FROM vulnerabilities GROUP BY vendor ORDER BY COUNT(*) DESC"
       ),
       client.query("SELECT COUNT(*)::int AS total FROM vulnerabilities")
     ]);
@@ -112,14 +122,14 @@ export async function getVulnerabilityStatsFromSupabase(): Promise<Vulnerability
       return acc;
     }, {});
 
-    const topVendors = vendorsResult.rows.map((row: any) => ({
+    const vendors = vendorsResult.rows.map((row: any) => ({
       vendor: row.vendor,
       count: Number(row.count)
     }));
 
     return {
       severityBreakdown,
-      topVendors,
+      vendors,
       total: Number(totalResult.rows[0]?.total ?? 0)
     };
   } finally {
