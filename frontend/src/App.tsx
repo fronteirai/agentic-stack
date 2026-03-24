@@ -256,9 +256,6 @@ function DashboardContent() {
                 ))}
               </select>
             </label>
-            <button type="button" onClick={() => setSortDesc((prev) => !prev)}>
-              Sort by Risk: {sortDesc ? "High -> Low" : "Low -> High"}
-            </button>
             <button type="button" onClick={() => void loadData()}>
               Refresh
             </button>
@@ -325,16 +322,31 @@ function DashboardContent() {
 
       <section className="panel">
         <h2>Vulnerability Table</h2>
-        <p className="subtle table-hint">Click a row to expand or collapse the full description.</p>
+        <p className="subtle table-hint">
+          Click a row to expand or collapse the full description. The table loads up to 50 rows from the server; use
+          the Risk Score column to re-sort the loaded rows.
+        </p>
         <table>
           <thead>
             <tr>
-              <th>CVE ID</th>
-              <th>Vendor</th>
-              <th>Description</th>
-              <th>Severity</th>
-              <th>Risk Score</th>
-              <th>Date</th>
+              <th scope="col">CVE ID</th>
+              <th scope="col">Vendor</th>
+              <th scope="col">Description</th>
+              <th scope="col">Severity</th>
+              <th scope="col" aria-sort={sortDesc ? "descending" : "ascending"}>
+                <button
+                  type="button"
+                  className="th-sort-btn"
+                  onClick={() => setSortDesc((prev) => !prev)}
+                  title={sortDesc ? "Highest risk first; click for lowest first" : "Lowest risk first; click for highest first"}
+                >
+                  Risk Score
+                  <span className="th-sort-indicator" aria-hidden="true">
+                    {sortDesc ? " ↓" : " ↑"}
+                  </span>
+                </button>
+              </th>
+              <th scope="col">Date</th>
             </tr>
           </thead>
           <tbody>

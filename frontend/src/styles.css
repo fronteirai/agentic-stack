@@ -277,6 +277,36 @@ thead th {
   font-weight: 600;
 }
 
+.th-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.th-sort-btn:hover {
+  color: #e0f2fe;
+}
+
+.th-sort-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.th-sort-indicator {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
 .vendors {
   list-style: none;
   padding: 0;

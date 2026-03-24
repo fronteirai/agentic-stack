@@ -70,6 +70,7 @@ export async function getVulnerabilitiesFromSupabase(
       FROM vulnerabilities
       ${where}
       ORDER BY risk_score DESC, published_date DESC
+      LIMIT 50
     `,
       params
     );
