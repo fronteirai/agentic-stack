@@ -69,7 +69,10 @@ sdk = CopilotKitSDK(
         ),
         LangGraphAgent(
             name="cyber_risk",
-            description="Legal/financial structure proposal builder for stepcharts.io/play. User describes their need; agent updates and emits proposal state for display in an embedded play iframe.",
+            description=(
+                "Cyber vulnerability dashboard assistant: updates shared CopilotKit state for "
+                "severity/vendor filters on the risk dashboard and can call the Node API for stats/CVE lists."
+            ),
             graph=cyber_risk_graph,
         ),
     ]

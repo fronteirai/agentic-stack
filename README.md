@@ -30,6 +30,17 @@ Final score:
 - `GET /api/vulnerabilities/:id` - single vulnerability details by CVE ID
 - `GET /api/stats` - severity breakdown + top vendors
 - `GET /api/health` - app health + Supabase connectivity check
+- `POST /api/copilotkit` - CopilotKit runtime (streams to the LangGraph `cyber_risk` agent)
+
+## AI copilot (CopilotKit + LangGraph)
+
+The dashboard includes a **Risk copilot** sidebar (CopilotKit) that talks to the `cyber_risk` LangGraph agent. The agent updates shared state (`severity_filter`, `vendor_filter`) so the table and filters stay in sync when you ask things like “show only critical CVEs” or “filter vendor to Microsoft”.
+
+1. **Root `.env`**: set `LANGGRAPH_DEPLOYMENT_URL` (e.g. `http://localhost:8000`) and `LANGGRAPH_GRAPH_ID=cyber_risk` so the Express CopilotKit route can reach your LangGraph dev server (see `AGENTS_README.md`).
+2. **Agent `.env`** (`agents/copilotkit/agent/.env`): set `OPENAI_API_KEY` and optionally `CYBER_RISK_API_BASE_URL` (default `http://127.0.0.1:3001`) so tool calls can hit `/api/stats` and `/api/vulnerabilities`.
+3. Run **`npm run dev:all`** (or backend + frontend separately) **and** the LangGraph server (`langgraph dev` in the agent folder).
+
+Optional: `VITE_LANGGRAPH_GRAPH_ID` in the frontend must match `LANGGRAPH_GRAPH_ID` if you rename the graph.
 
 ## UI Features
 
@@ -42,6 +53,7 @@ Final score:
   - Orange `61-80`
   - Red `81-100`
 - Stats panel for severity counts and top vendors
+- Copilot sidebar for natural-language filtering (severity / vendor) backed by the same REST API
 
 ## Getting Started
 

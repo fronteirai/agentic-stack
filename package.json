@@ -25,10 +25,17 @@
   },
   "homepage": "https://github.com/ElishaKay/cyber-risk#readme",
   "dependencies": {
+    "@copilotkit/react-core": "^1.54.0",
+    "@copilotkit/react-ui": "^1.54.0",
+    "@copilotkit/runtime": "^1.54.0",
+    "@copilotkitnext/runtime": "^0.0.33",
+    "@langchain/langgraph-sdk": "^1.8.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "hono": "^4.12.9",
     "pg": "^8.20.0",
+    "rxjs": "^7.8.2",
     "three": "^0.183.2"
   },
   "devDependencies": {
@@ -38,6 +45,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.2.1",
     "react": "^19.2.4",

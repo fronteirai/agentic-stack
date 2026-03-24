@@ -17,6 +17,8 @@ LANGGRAPH_GRAPH_ID=cyber_risk
 ```
 OPENAI_API_KEY=
 NEXT_PUBLIC_AGENT_TYPE=langgraph
+# Base URL the LangGraph agent uses to call the Node API (stats / CVE list)
+CYBER_RISK_API_BASE_URL=http://127.0.0.1:3001
 ```
 
 ## Step 2: Running the Langgraph Agent

@@ -1,5 +1,27 @@
+import { CopilotKit, useCoAgent } from "@copilotkit/react-core";
+import { CopilotSidebar } from "@copilotkit/react-ui";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+
+const COPILOT_AGENT_ID = import.meta.env.VITE_LANGGRAPH_GRAPH_ID ?? "cyber_risk";
+
+interface CopilotDashboardState {
+  severity_filter?: string;
+  vendor_filter?: string;
+}
+
+function getSessionCopilotThreadId(): string {
+  const key = "cyber_risk_copilot_thread_id";
+  try {
+    const existing = sessionStorage.getItem(key);
+    if (existing) return existing;
+    const id = crypto.randomUUID();
+    sessionStorage.setItem(key, id);
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 type Severity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "UNKNOWN";
 
@@ -35,10 +57,14 @@ function buildVulnQuery(severity: string, vendor: string): string {
   return q ? `?${q}` : "";
 }
 
-export function App() {
+function DashboardContent() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [severityFilter, setSeverityFilter] = useState<string>("");
   const [vendorFilter, setVendorFilter] = useState<string>("");
+  const { state, setState } = useCoAgent<CopilotDashboardState>({
+    name: COPILOT_AGENT_ID,
+    initialState: { severity_filter: "", vendor_filter: "" }
+  });
   const [sortDesc, setSortDesc] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -128,6 +154,14 @@ export function App() {
   }, [loadData]);
 
   useEffect(() => {
+    if (!state) return;
+    const nextSev = state.severity_filter ?? "";
+    const nextVendor = state.vendor_filter ?? "";
+    setSeverityFilter((prev) => (prev !== nextSev ? nextSev : prev));
+    setVendorFilter((prev) => (prev !== nextVendor ? nextVendor : prev));
+  }, [state]);
+
+  useEffect(() => {
     setExpandedIds(new Set());
   }, [severityFilter, vendorFilter]);
 
@@ -145,11 +179,15 @@ export function App() {
   }, [stats]);
 
   function toggleSeverityChip(sev: string) {
-    setSeverityFilter((prev) => (prev === sev ? "" : sev));
+    const next = severityFilter === sev ? "" : sev;
+    setSeverityFilter(next);
+    setState((prev) => ({ ...prev, severity_filter: next }));
   }
 
   function toggleVendorFilter(vendor: string) {
-    setVendorFilter((prev) => (prev === vendor ? "" : vendor));
+    const next = vendorFilter === vendor ? "" : vendor;
+    setVendorFilter(next);
+    setState((prev) => ({ ...prev, vendor_filter: next }));
   }
 
   function toggleRowExpanded(id: string) {
@@ -177,7 +215,14 @@ export function App() {
           <div className="controls">
             <label>
               Severity filter:
-              <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)}>
+              <select
+                value={severityFilter}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setSeverityFilter(v);
+                  setState((prev) => ({ ...prev, severity_filter: v }));
+                }}
+              >
                 <option value="">All</option>
                 <option value="LOW">LOW</option>
                 <option value="MEDIUM">MEDIUM</option>
@@ -190,7 +235,11 @@ export function App() {
               Vendor filter:
               <select
                 value={vendorFilter}
-                onChange={(e) => setVendorFilter(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setVendorFilter(v);
+                  setState((prev) => ({ ...prev, vendor_filter: v }));
+                }}
                 disabled={!stats?.vendors?.length}
               >
                 <option value="">All vendors</option>
@@ -214,6 +263,7 @@ export function App() {
                 onClick={() => {
                   setSeverityFilter("");
                   setVendorFilter("");
+                  setState(() => ({ severity_filter: "", vendor_filter: "" }));
                 }}
               >
                 Clear filters
@@ -319,5 +369,27 @@ export function App() {
         </table>
       </section>
     </main>
+  );
+}
+
+export function App() {
+  const [threadId] = useState(getSessionCopilotThreadId);
+
+  return (
+    <CopilotKit runtimeUrl="/api/copilotkit" agent={COPILOT_AGENT_ID} threadId={threadId}>
+      <DashboardContent />
+      <CopilotSidebar
+        defaultOpen={false}
+        labels={{
+          title: "Risk copilot",
+          initial:
+            'Try: "Show only critical CVEs", "Filter vendor to Microsoft", or "Clear all filters".'
+        }}
+        instructions={
+          "You are the in-app assistant for the vulnerability risk dashboard. " +
+          "Use tools to update dashboard filters and to fetch live stats from the API when needed."
+        }
+      />
+    </CopilotKit>
   );
 }

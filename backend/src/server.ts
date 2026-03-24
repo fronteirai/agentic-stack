@@ -6,6 +6,7 @@ import {
   getVulnerabilityByIdFromSupabase,
   getVulnerabilityStatsFromSupabase
 } from "./db";
+import { createCyberRiskCopilotRouter } from "./copilotkitRouter";
 import type { Severity } from "./types";
 
 const app = express();
@@ -13,6 +14,8 @@ const PORT = Number(process.env.PORT || 3001);
 
 app.use(cors());
 app.use(express.json());
+
+app.use(createCyberRiskCopilotRouter());
 
 app.get("/api/health", async (_req, res) => {
   const supabaseConnected = await checkSupabaseConnection();
