@@ -26,7 +26,7 @@ CYBER_RISK_API_BASE_URL=http://127.0.0.1:3001
 a) Create and activate a Python 3.12 virtual environment:
 
 ```bash
-cd full-stack/copilotkit/agent
+cd agents/copilotkit/agent
 python3.12 -m venv .venv
 source .venv/bin/activate
 ```
