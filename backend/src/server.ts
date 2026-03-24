@@ -15,8 +15,8 @@ const PORT = Number(process.env.PORT || 3001);
 app.use(cors());
 app.use(express.json());
 
-app.use(createCyberRiskCopilotRouter());
-
+// Register REST routes before CopilotKit: its Express helper ends with a catch-all
+// 404 middleware, so mounting it first would swallow /api/vulnerabilities and /api/stats.
 app.get("/api/health", async (_req, res) => {
   const supabaseConnected = await checkSupabaseConnection();
   res.json({ ok: true, supabaseConnected });
@@ -64,6 +64,8 @@ app.get("/api/stats", async (_req, res) => {
     });
   }
 });
+
+app.use(createCyberRiskCopilotRouter());
 
 app.listen(PORT, () => {
   console.log(`Backend listening on http://localhost:${PORT}`);
