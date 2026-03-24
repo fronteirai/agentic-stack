@@ -53,9 +53,12 @@ app.get("/api/vulnerabilities/:id", async (req, res) => {
   }
 });
 
-app.get("/api/stats", async (_req, res) => {
+app.get("/api/stats", async (req, res) => {
   try {
-    const stats = await getVulnerabilityStatsFromSupabase();
+    const severity = (req.query.severity as string | undefined)?.toUpperCase() as Severity | undefined;
+    const vendorRaw = req.query.vendor as string | undefined;
+    const vendor = typeof vendorRaw === "string" && vendorRaw.trim() !== "" ? vendorRaw.trim() : undefined;
+    const stats = await getVulnerabilityStatsFromSupabase(severity, vendor);
     res.json(stats);
   } catch (error) {
     res.status(502).json({

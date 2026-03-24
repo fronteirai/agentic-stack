@@ -5,10 +5,7 @@ import * as THREE from "three";
 
 const COPILOT_AGENT_ID = import.meta.env.VITE_LANGGRAPH_GRAPH_ID ?? "cyber_risk";
 
-interface CopilotDashboardState {
-  severity_filter?: string;
-  vendor_filter?: string;
-}
+const MAX_VULN_SNAPSHOT_ROWS = 500;
 
 function getSessionCopilotThreadId(): string {
   const key = "cyber_risk_copilot_thread_id";
@@ -34,6 +31,14 @@ interface Vulnerability {
   riskScore: number;
   publishedDate: string;
   vendor: string;
+}
+
+interface CopilotDashboardState {
+  severity_filter?: string;
+  vendor_filter?: string;
+  /** CVE rows for current filters (may be truncated for CopilotKit payload size). */
+  vulnerability_table_snapshot?: Vulnerability[];
+  vulnerability_table_total_count?: number;
 }
 
 interface StatsResponse {
@@ -63,7 +68,12 @@ function DashboardContent() {
   const [vendorFilter, setVendorFilter] = useState<string>("");
   const { state, setState } = useCoAgent<CopilotDashboardState>({
     name: COPILOT_AGENT_ID,
-    initialState: { severity_filter: "", vendor_filter: "" }
+    initialState: {
+      severity_filter: "",
+      vendor_filter: "",
+      vulnerability_table_snapshot: [],
+      vulnerability_table_total_count: 0
+    }
   });
   const [sortDesc, setSortDesc] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -140,8 +150,16 @@ function DashboardContent() {
       if (!vulnRes.ok) throw new Error("Failed to fetch vulnerabilities");
       if (!statsRes.ok) throw new Error("Failed to fetch stats");
 
-      setRows(await vulnRes.json());
+      const vulnJson: Vulnerability[] = await vulnRes.json();
+      setRows(vulnJson);
       setStats(await statsRes.json());
+      setState((prev) => ({
+        ...prev,
+        severity_filter: severityFilter,
+        vendor_filter: vendorFilter,
+        vulnerability_table_total_count: vulnJson.length,
+        vulnerability_table_snapshot: vulnJson.slice(0, MAX_VULN_SNAPSHOT_ROWS)
+      }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unexpected error");
     } finally {
@@ -387,7 +405,8 @@ export function App() {
         }}
         instructions={
           "You are the in-app assistant for the vulnerability risk dashboard. " +
-          "Use tools to update dashboard filters and to fetch live stats from the API when needed."
+          "Use tools to update dashboard filters. For summaries of the visible table, follow the agent flow: " +
+          "set filters, refresh the vulnerability table snapshot into shared state, then summarize that data only."
         }
       />
     </CopilotKit>

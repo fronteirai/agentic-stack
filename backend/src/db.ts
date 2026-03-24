@@ -105,16 +105,36 @@ export interface VulnerabilityStats {
   total: number;
 }
 
-export async function getVulnerabilityStatsFromSupabase(): Promise<VulnerabilityStats> {
+export async function getVulnerabilityStatsFromSupabase(
+  severity?: Severity,
+  vendor?: string
+): Promise<VulnerabilityStats> {
   const client = createClient();
   try {
     await client.connect();
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    let i = 1;
+    if (severity) {
+      conditions.push(`severity = $${i++}`);
+      params.push(severity);
+    }
+    if (vendor) {
+      conditions.push(`vendor = $${i++}`);
+      params.push(vendor);
+    }
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
     const [severityResult, vendorsResult, totalResult] = await Promise.all([
-      client.query("SELECT severity, COUNT(*)::int AS count FROM vulnerabilities GROUP BY severity"),
       client.query(
-        "SELECT vendor, COUNT(*)::int AS count FROM vulnerabilities GROUP BY vendor ORDER BY COUNT(*) DESC"
+        `SELECT severity, COUNT(*)::int AS count FROM vulnerabilities ${where} GROUP BY severity`,
+        params
       ),
-      client.query("SELECT COUNT(*)::int AS total FROM vulnerabilities")
+      client.query(
+        `SELECT vendor, COUNT(*)::int AS count FROM vulnerabilities ${where} GROUP BY vendor ORDER BY COUNT(*) DESC`,
+        params
+      ),
+      client.query(`SELECT COUNT(*)::int AS total FROM vulnerabilities ${where}`, params)
     ]);
 
     const severityBreakdown = severityResult.rows.reduce<Record<string, number>>((acc, row: any) => {
