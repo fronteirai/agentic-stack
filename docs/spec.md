@@ -1,10 +1,11 @@
 About Kovrr
 Kovrr quantifies cyber risk for enterprises - we integrate with security tools, process large volumes of data, and translate technical threats into financial impact for CISOs and boards.
+
 The Task: Vulnerability Risk Dashboard
 Build a mini full-stack app that fetches vulnerability data, calculates risk scores, and displays results.
 
 Part 1: Backend
-Tech: Python (FastAPI) or Node.js | SQLite or any DB
+Tech: Node.js | Supabase (there's a .env file in the root with the `SUPABASE_URL` variable you can leverage to connect)
 
 API Source - NVD (no auth required): 
 GET https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=20
@@ -34,7 +35,7 @@ C. Stats Panel
    • Severity breakdown (chart optional)
 
 AI Tools Usage
-We encourage Claude, Cursor, Copilot!
+We encourage Cursor!
 In your README, include:
 • Which AI tools you used
 • What you used them for
