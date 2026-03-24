@@ -57,6 +57,12 @@ Optional: `VITE_LANGGRAPH_GRAPH_ID` in the frontend must match `LANGGRAPH_GRAPH_
 
 ## Getting Started
 
+### Step 1: Setup .env files
+
+Setup <a href=".env.example">.env</a> and <a href="agents/copilotkit/agent/.env.example">agents/copilotkit/agent/.env</a> files based on their corresponding example files.
+
+### Running JavaScript Frontend & Backend & Langgraph AI Agent
+
 Install dependencies:
 
 ```bash
@@ -76,6 +82,13 @@ npm run dev:frontend
 ```
 
 Backend runs on `http://localhost:3001`, frontend on `http://localhost:5173`.
+
+You can also run both with:
+```bash
+npm run dev:all
+```
+
+You'll also want to spin up the langgraph agent server based on the <a href="AGENTS_README.md">guidelines in AGENTS_README.md</a>
 
 ## Tests
 
