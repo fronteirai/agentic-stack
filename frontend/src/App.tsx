@@ -74,8 +74,6 @@ function DashboardContent() {
   /** Concurrent fetches; only clear loading when the last one finishes. */
   const loadInFlightRef = useRef(0);
   const setStateRef = useRef<ReturnType<typeof useCoAgent<CopilotDashboardState>>["setState"] | null>(null);
-  const [severityFilter, setSeverityFilter] = useState<string>("");
-  const [vendorFilter, setVendorFilter] = useState<string>("");
   const { state, setState } = useCoAgent<CopilotDashboardState>({
     name: COPILOT_AGENT_ID,
     initialState: {
@@ -86,6 +84,10 @@ function DashboardContent() {
     }
   });
   setStateRef.current = setState;
+  // Same pattern as langgraph_shared_state: filters live in agent state only (no duplicate
+  // React useState) so UI edits and LangGraph/tools share one object — no sync ping-pong.
+  const severityFilter = state?.severity_filter ?? "";
+  const vendorFilter = state?.vendor_filter ?? "";
   filtersRef.current = { sev: severityFilter, vend: vendorFilter };
 
   const [sortDesc, setSortDesc] = useState(true);
@@ -186,16 +188,6 @@ function DashboardContent() {
 
       setRows(vulnJson);
       setStats(statsJson);
-      const patch = setStateRef.current;
-      if (patch) {
-        patch((prev) => ({
-          ...prev,
-          severity_filter: sev,
-          vendor_filter: vend,
-          vulnerability_table_total_count: vulnJson.length,
-          vulnerability_table_snapshot: vulnJson.slice(0, MAX_VULN_SNAPSHOT_ROWS)
-        }));
-      }
     } catch (e) {
       if (!matchesRequest()) {
         return;
@@ -213,14 +205,17 @@ function DashboardContent() {
     void loadData();
   }, [loadData]);
 
-  // Apply agent-driven filter changes only when those fields change — not on every coagent
-  // snapshot update — so local filters are not fighting vulnerability_table_* refreshes.
-  const agentSev = state?.severity_filter ?? "";
-  const agentVendor = state?.vendor_filter ?? "";
+  // Push fetched rows into shared state only (filters are already on `state` from setState).
+  // Matches shared_state demo: agent fields updated in targeted slices, not a second source.
   useEffect(() => {
-    setSeverityFilter((prev) => (prev !== agentSev ? agentSev : prev));
-    setVendorFilter((prev) => (prev !== agentVendor ? agentVendor : prev));
-  }, [agentSev, agentVendor]);
+    const sync = setStateRef.current;
+    if (!sync) return;
+    sync((prev) => ({
+      ...(prev ?? {}),
+      vulnerability_table_total_count: rows.length,
+      vulnerability_table_snapshot: rows.slice(0, MAX_VULN_SNAPSHOT_ROWS)
+    }));
+  }, [rows]);
 
   useEffect(() => {
     setExpandedIds(new Set());
@@ -240,15 +235,19 @@ function DashboardContent() {
   }, [stats]);
 
   function toggleSeverityChip(sev: string) {
-    const next = severityFilter === sev ? "" : sev;
-    setSeverityFilter(next);
-    setState((prev) => ({ ...prev, severity_filter: next }));
+    setState((prev) => {
+      const cur = prev?.severity_filter ?? "";
+      const next = cur === sev ? "" : sev;
+      return { ...(prev ?? {}), severity_filter: next };
+    });
   }
 
   function toggleVendorFilter(vendor: string) {
-    const next = vendorFilter === vendor ? "" : vendor;
-    setVendorFilter(next);
-    setState((prev) => ({ ...prev, vendor_filter: next }));
+    setState((prev) => {
+      const cur = prev?.vendor_filter ?? "";
+      const next = cur === vendor ? "" : vendor;
+      return { ...(prev ?? {}), vendor_filter: next };
+    });
   }
 
   function toggleRowExpanded(id: string) {
@@ -280,8 +279,7 @@ function DashboardContent() {
                 value={severityFilter}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setSeverityFilter(v);
-                  setState((prev) => ({ ...prev, severity_filter: v }));
+                  setState((prev) => ({ ...(prev ?? {}), severity_filter: v }));
                 }}
               >
                 <option value="">All</option>
@@ -298,8 +296,7 @@ function DashboardContent() {
                 value={vendorFilter}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setVendorFilter(v);
-                  setState((prev) => ({ ...prev, vendor_filter: v }));
+                  setState((prev) => ({ ...(prev ?? {}), vendor_filter: v }));
                 }}
                 disabled={!stats?.vendors?.length}
               >
@@ -319,9 +316,11 @@ function DashboardContent() {
                 type="button"
                 className="clear-filters"
                 onClick={() => {
-                  setSeverityFilter("");
-                  setVendorFilter("");
-                  setState(() => ({ severity_filter: "", vendor_filter: "" }));
+                  setState((prev) => ({
+                    ...(prev ?? {}),
+                    severity_filter: "",
+                    vendor_filter: ""
+                  }));
                 }}
               >
                 Clear filters
