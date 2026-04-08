@@ -50,8 +50,30 @@ function buildVulnQuery(severity: string, vendor: string): string {
   return q ? `?${q}` : "";
 }
 
+async function readApiErrorMessage(res: Response, fallback: string): Promise<string> {
+  const ct = res.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) {
+    return `${fallback} (HTTP ${res.status})`;
+  }
+  try {
+    const data = (await res.json()) as { error?: string; details?: string };
+    if (data.details) {
+      return data.error ? `${data.error}: ${data.details}` : data.details;
+    }
+    if (data.error) return data.error;
+  } catch {
+    /* ignore malformed JSON */
+  }
+  return `${fallback} (HTTP ${res.status})`;
+}
+
 function DashboardContent() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  /** Latest filters (updated every render) for stale-response checks after await. */
+  const filtersRef = useRef({ sev: "", vend: "" });
+  /** Concurrent fetches; only clear loading when the last one finishes. */
+  const loadInFlightRef = useRef(0);
+  const setStateRef = useRef<ReturnType<typeof useCoAgent<CopilotDashboardState>>["setState"] | null>(null);
   const [severityFilter, setSeverityFilter] = useState<string>("");
   const [vendorFilter, setVendorFilter] = useState<string>("");
   const { state, setState } = useCoAgent<CopilotDashboardState>({
@@ -63,6 +85,9 @@ function DashboardContent() {
       vulnerability_table_total_count: 0
     }
   });
+  setStateRef.current = setState;
+  filtersRef.current = { sev: severityFilter, vend: vendorFilter };
+
   const [sortDesc, setSortDesc] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -126,32 +151,61 @@ function DashboardContent() {
   }, []);
 
   const loadData = useCallback(async () => {
+    const sev = severityFilter;
+    const vend = vendorFilter;
+    loadInFlightRef.current += 1;
     setLoading(true);
     setError("");
+    const matchesRequest = () =>
+      filtersRef.current.sev === sev && filtersRef.current.vend === vend;
+
     try {
-      const q = buildVulnQuery(severityFilter, vendorFilter);
+      const q = buildVulnQuery(sev, vend);
       const [vulnRes, statsRes] = await Promise.all([
         fetch(`/api/vulnerabilities${q}`),
         fetch("/api/stats")
       ]);
 
-      if (!vulnRes.ok) throw new Error("Failed to fetch vulnerabilities");
-      if (!statsRes.ok) throw new Error("Failed to fetch stats");
+      if (!matchesRequest()) {
+        return;
+      }
+
+      if (!vulnRes.ok) {
+        throw new Error(await readApiErrorMessage(vulnRes, "Failed to fetch vulnerabilities"));
+      }
+      if (!statsRes.ok) {
+        throw new Error(await readApiErrorMessage(statsRes, "Failed to fetch stats"));
+      }
 
       const vulnJson: Vulnerability[] = await vulnRes.json();
+      const statsJson: StatsResponse = await statsRes.json();
+
+      if (!matchesRequest()) {
+        return;
+      }
+
       setRows(vulnJson);
-      setStats(await statsRes.json());
-      setState((prev) => ({
-        ...prev,
-        severity_filter: severityFilter,
-        vendor_filter: vendorFilter,
-        vulnerability_table_total_count: vulnJson.length,
-        vulnerability_table_snapshot: vulnJson.slice(0, MAX_VULN_SNAPSHOT_ROWS)
-      }));
+      setStats(statsJson);
+      const patch = setStateRef.current;
+      if (patch) {
+        patch((prev) => ({
+          ...prev,
+          severity_filter: sev,
+          vendor_filter: vend,
+          vulnerability_table_total_count: vulnJson.length,
+          vulnerability_table_snapshot: vulnJson.slice(0, MAX_VULN_SNAPSHOT_ROWS)
+        }));
+      }
     } catch (e) {
+      if (!matchesRequest()) {
+        return;
+      }
       setError(e instanceof Error ? e.message : "Unexpected error");
     } finally {
-      setLoading(false);
+      loadInFlightRef.current -= 1;
+      if (loadInFlightRef.current === 0) {
+        setLoading(false);
+      }
     }
   }, [severityFilter, vendorFilter]);
 
@@ -159,13 +213,14 @@ function DashboardContent() {
     void loadData();
   }, [loadData]);
 
+  // Apply agent-driven filter changes only when those fields change — not on every coagent
+  // snapshot update — so local filters are not fighting vulnerability_table_* refreshes.
+  const agentSev = state?.severity_filter ?? "";
+  const agentVendor = state?.vendor_filter ?? "";
   useEffect(() => {
-    if (!state) return;
-    const nextSev = state.severity_filter ?? "";
-    const nextVendor = state.vendor_filter ?? "";
-    setSeverityFilter((prev) => (prev !== nextSev ? nextSev : prev));
-    setVendorFilter((prev) => (prev !== nextVendor ? nextVendor : prev));
-  }, [state]);
+    setSeverityFilter((prev) => (prev !== agentSev ? agentSev : prev));
+    setVendorFilter((prev) => (prev !== agentVendor ? agentVendor : prev));
+  }, [agentSev, agentVendor]);
 
   useEffect(() => {
     setExpandedIds(new Set());

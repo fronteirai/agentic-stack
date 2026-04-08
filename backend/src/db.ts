@@ -5,11 +5,14 @@ import type { Severity, VulnerabilityItem } from "./types";
 dotenv.config();
 
 const { Client } = pg;
-const connectionString = process.env.SUPABASE_URL;
+
+/** Prefer standard DATABASE_URL; fall back to SUPABASE_URL for this project. */
+const connectionString =
+  process.env.DATABASE_URL?.trim() || process.env.SUPABASE_URL?.trim();
 
 function createClient(): pg.Client {
   if (!connectionString) {
-    throw new Error("SUPABASE_URL is not configured");
+    throw new Error("DATABASE_URL or SUPABASE_URL is not configured");
   }
   return new Client({
     connectionString,

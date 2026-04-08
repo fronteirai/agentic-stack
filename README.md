@@ -21,8 +21,10 @@ Setup <a href=".env.example">.env</a> and <a href="agents/copilotkit/agent/.env.
 *Step 2: Load sample data into Supabase via script*
 
 ```bash
-scripts/syncNvdToSupabase.ts
+npm run sync:nvd
 ```
+
+(Uses `tsx` under the hood. Running `node scripts/syncNvdToSupabase.ts` will fail because Node does not execute TypeScript or resolve `.ts` imports.)
 
 *Step 3: Running JavaScript Frontend & Backend & Langgraph AI Agent*
 

@@ -1,0 +1,14 @@
+diff --git a/node_modules/@langchain/langgraph-sdk/dist/utils/async_caller.js b/node_modules/@langchain/langgraph-sdk/dist/utils/async_caller.js
+index 0000000..1111111 100644
+--- a/node_modules/@langchain/langgraph-sdk/dist/utils/async_caller.js
++++ b/node_modules/@langchain/langgraph-sdk/dist/utils/async_caller.js
+@@ -79,7 +79,8 @@
+ 			else throw new Error(error);
+ 		}), {
+ 			async onFailedAttempt(error) {
+-				if (error.message.startsWith("Cancel") || error.message.startsWith("TimeoutError") || error.message.startsWith("AbortError")) throw error;
++				const msg = typeof error?.message === "string" ? error.message : "";
++				if (msg.startsWith("Cancel") || msg.startsWith("TimeoutError") || msg.startsWith("AbortError")) throw error;
+ 				if (error?.code === "ECONNABORTED") throw error;
+ 				if (error instanceof HTTPError) {
+ 					if (STATUS_NO_RETRY.includes(error.status)) throw error;

@@ -1,3 +1,6 @@
+/**
+ * Sync CVEs from NVD into Supabase. Run: `npm run sync:nvd` (do not use plain `node` on this file).
+ */
 import dotenv from "dotenv";
 import pg from "pg";
 import { toVulnerabilityItem } from "../backend/src/risk";

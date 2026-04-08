@@ -33,11 +33,15 @@ export function createIsolatedAgent(
   const clientInternals = agent.client as unknown as ClientInternals;
   const expectedUrl = config.deploymentUrl.replace(/\/$/, "");
   const actualUrl = clientInternals.apiUrl?.replace(/\/$/, "");
+  const needsOurClient =
+    actualUrl == null || actualUrl === "" || expectedUrl !== actualUrl;
 
-  if (expectedUrl !== actualUrl) {
-    console.warn(
-      `[LangGraphHistory] URL mismatch detected! Expected: ${expectedUrl}, Got: ${actualUrl}. Replacing client.`
-    );
+  if (needsOurClient) {
+    if (actualUrl != null && actualUrl !== "" && expectedUrl !== actualUrl) {
+      console.warn(
+        `[LangGraphHistory] URL mismatch detected! Expected: ${expectedUrl}, Got: ${actualUrl}. Replacing client.`
+      );
+    }
 
     const newClient = new Client({
       apiUrl: config.deploymentUrl,

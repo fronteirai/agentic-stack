@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Mini full-stack vulnerability risk dashboard",
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "npm run dev:backend",
-    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:all": "concurrently -k \"npm run dev:backend\" \"wait-on tcp:127.0.0.1:3001 && npm run dev:frontend\"",
     "dev:backend": "tsx watch backend/src/server.ts",
     "dev:frontend": "vite --config frontend/vite.config.ts",
     "sync:nvd": "tsx scripts/syncNvdToSupabase.ts",
@@ -25,9 +26,10 @@
   },
   "homepage": "https://github.com/ElishaKay/cyber-risk#readme",
   "dependencies": {
-    "@copilotkit/react-core": "^1.54.0",
-    "@copilotkit/react-ui": "^1.54.0",
-    "@copilotkit/runtime": "^1.54.0",
+    "@copilotkit/react-core": "^1.54.1",
+    "@copilotkit/react-textarea": "^1.54.1",
+    "@copilotkit/react-ui": "^1.54.1",
+    "@copilotkit/runtime": "^1.54.1",
     "@copilotkitnext/runtime": "1.54.0",
     "@langchain/langgraph-sdk": "^1.8.0",
     "cors": "^2.8.6",
@@ -48,11 +50,13 @@
     "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.2.1",
+    "patch-package": "^8.0.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.2",
-    "vitest": "^4.1.1"
+    "vitest": "^4.1.1",
+    "wait-on": "^9.0.4"
   }
 }

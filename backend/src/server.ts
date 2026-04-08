@@ -7,6 +7,7 @@ import {
   getVulnerabilityStatsFromSupabase
 } from "./db";
 import { createCyberRiskCopilotRouter } from "./copilotkitRouter";
+import { formatSupabaseConnectionError } from "./supabaseConnectionHint";
 import type { Severity } from "./types";
 
 const app = express();
@@ -32,7 +33,7 @@ app.get("/api/vulnerabilities", async (req, res) => {
   } catch (error) {
     res.status(502).json({
       error: "Failed to fetch vulnerabilities from Supabase",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: formatSupabaseConnectionError(error)
     });
   }
 });
@@ -48,7 +49,7 @@ app.get("/api/vulnerabilities/:id", async (req, res) => {
   } catch (error) {
     res.status(502).json({
       error: "Failed to fetch vulnerabilities from Supabase",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: formatSupabaseConnectionError(error)
     });
   }
 });
@@ -63,7 +64,7 @@ app.get("/api/stats", async (req, res) => {
   } catch (error) {
     res.status(502).json({
       error: "Failed to compute stats from Supabase data",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: formatSupabaseConnectionError(error)
     });
   }
 });
