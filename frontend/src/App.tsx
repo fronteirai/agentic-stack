@@ -271,7 +271,6 @@ function DashboardContent() {
       <section className="hero">
         <div className="hero-copy">
           <h1>Vulnerability Risk Dashboard</h1>
-          <p className="subtle">Risk = CVSS(60%) + exploitability(20%) + age(20%)</p>
           <div className="controls">
             <label>
               Severity filter:
