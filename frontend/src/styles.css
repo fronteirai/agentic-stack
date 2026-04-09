@@ -378,3 +378,24 @@ thead th {
 .copilotKitSidebar .copilotKitWindow .copilotKitMessages {
   min-height: 0;
 }
+
+/*
+ * CopilotKit expects app content as <CopilotSidebar>{children}</CopilotSidebar> so the
+ * sidebar wrapper can reserve width with margin-right. This app renders the dashboard
+ * as a sibling instead; the wrapper still gets min-height:100vh and sits in normal flow
+ * after <main>, creating a huge empty gap under the page. Collapse that shell in flow.
+ */
+.copilotKitSidebarContentWrapper {
+  min-height: 0;
+  height: auto;
+}
+
+.copilotKitSidebarContentWrapper > .copilotKitModalChildrenWrapper {
+  min-height: 0;
+  height: auto;
+}
+
+.copilotKitSidebarContentWrapper > .copilotKitModalChildrenWrapper > * {
+  min-height: 0;
+  height: auto;
+}
