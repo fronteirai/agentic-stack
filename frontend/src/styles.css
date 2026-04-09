@@ -347,3 +347,34 @@ thead th {
     grid-template-columns: 1fr;
   }
 }
+
+/*
+ * CopilotKit sidebar (desktop): the bundled styles use top:auto + min-height:100% on
+ * .copilotKitSidebar .copilotKitWindow, so the panel grows with content and
+ * .copilotKitMessages never gets a bounded height — scrolling breaks and the input
+ * rides mid-column. Pin the window to the viewport and let the chat column flex.
+ */
+@media (min-width: 640px) {
+  .copilotKitSidebar .copilotKitWindow.open {
+    top: 0;
+    bottom: 0;
+    /* Override .copilotKitWindow { height: 600px } so the sidebar fills the viewport */
+    height: auto;
+    min-height: 0;
+    max-height: 100vh;
+    max-height: 100dvh;
+  }
+}
+
+/* Modal/sidebar path uses a Fragment — no .copilotKitChat wrapper; body is Header + plain div */
+.copilotKitSidebar .copilotKitWindow > .copilotKitHeader + div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.copilotKitSidebar .copilotKitWindow .copilotKitMessages {
+  min-height: 0;
+}
