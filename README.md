@@ -1,4 +1,12 @@
-# Vulnerability Risk Dashboard
+# Full-Stack Agentic Experience
+
+This demo repo uses Copilotkit & Langgraph to build agentic experiences that sync chat & visual experiences.
+
+It achieves this by synching the state between the Langgraph Backend & React Frontend.
+
+![Sync diagram](sync.png)
+
+# About the app
 
 Mini full-stack app that fetches CVE data from NVD, calculates risk scores, and displays results in a React dashboard.
 
